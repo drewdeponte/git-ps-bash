@@ -7,7 +7,7 @@ remote_base="${remote}/${base_branch}"
 
 print_ps_usage() {
   echo "Usage: git-ps <subcommand>"
-  echo "valid subcommands: ls, rr"
+  echo "valid subcommands: ls, rebase, rr, push"
 }
 
 list_patch_stack() {
@@ -125,8 +125,15 @@ request_review() {
   fi
 }
 
+rebase() {
+  git rebase -i --onto ${remote_base} ${remote_base} ${base_branch}
+}
+
+push() {
+  echo "push a patch to mainline"
+}
+
 validate_min_num_args_met() {
-  echo $#
   if [ "$#" -lt 1 ]; then
     echo "error: wrong number of arguments"
     echo ""
@@ -148,6 +155,10 @@ if [ "$subcommand" = "ls" ]; then
   list_patch_stack
 elif [ "$subcommand" = "rr" ]; then
   request_review $@
+elif [ "$subcommand" = "rebase" ]; then
+  rebase $@
+elif [ "$subcommand" = "push" ]; then
+  push $@
 else
   echo "error: ${subcommand} is an invalid subcommand"
   echo ""

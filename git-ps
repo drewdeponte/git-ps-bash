@@ -219,6 +219,11 @@ push() {
   # delete the local temp branch
 }
 
+pull() {
+  fetch_upstream
+  rebase
+}
+
 validate_min_num_args_met() {
   if [ "$#" -lt 1 ]; then
     echo "error: wrong number of arguments"
@@ -240,6 +245,8 @@ elif [ "$subcommand" = "rebase" ]; then
   rebase $@
 elif [ "$subcommand" = "push" ]; then
   push $@
+elif [ "$subcommand" = "pull" ]; then
+  pull $@
 else
   echo "error: ${subcommand} is an invalid subcommand"
   echo ""

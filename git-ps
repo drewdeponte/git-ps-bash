@@ -5,119 +5,153 @@ remote="origin"
 base_branch="master"
 remote_base="${remote}/${base_branch}"
 
-# Make sure right number of arguments were passed to the command and validate
-# the values of those arguments as best as we can.
-if [ "$#" -ne 2 ]; then
-  echo "Wrong number of arguments"
+print_ps_usage() {
+  echo "Usage: git-ps <subcommand>"
+  echo "valid subcommands: ls, rr"
+}
+
+list_patch_stack() {
+  git log --pretty='format:%C(auto)%h %s' ${remote_base}..${base_branch}
+}
+
+print_ps_rr_usage() {
   echo "Usage: git rr <branch_name> <sha>"
   echo "Usage: git rr -i|--interactive <branch_name>"
-  exit 1
-fi
+}
 
-# Options Parsing
+request_review() {
+  # Make sure right number of arguments were passed to the command and validate
+  # the values of those arguments as best as we can.
+  if [ "$#" -ne 2 ]; then
+    echo "Wrong number of arguments"
+    print_ps_rr_usage
+    exit 1
+  fi
 
-if [ "$1" = "-i" ] || [ "$1" = "--interactive" ]; then
-  interactive=1
-else
-  interactive=0
-fi
+  # Options Parsing
 
-if [ $interactive -eq 1 ]; then
-  command -v sk >/dev/null 2>&1
+  if [ "$1" = "-i" ] || [ "$1" = "--interactive" ]; then
+    interactive=1
+  else
+    interactive=0
+  fi
+
+  if [ $interactive -eq 1 ]; then
+    command -v sk >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      echo "fatal: interactive mode depends on the 'skim' fuzzy finder but it in't in the path'"
+      echo "If you haven't installed you can easily do so via: brew install sk"
+      exit 2
+    fi
+
+    selected_log_entry=$(git log --pretty='format:%C(auto)%h %s' ${remote_base}..${base_branch} | sk)
+    if [ "${selected_log_entry}" = "" ]; then
+      echo "fatal: You neglected to select a commit to request review for."
+      echo "We can't request a review if you don't tell us what you want reviewed silly."
+      exit 3
+    fi
+
+    commit_sha=$(echo ${selected_log_entry} | awk -F' ' '{print $1}')
+    branch_name=$2
+  else
+    branch_name=$1
+    commit_sha=$2
+  fi
+
+  ## Input Validations
+
+  # Make sure that a commit with the provided sha exists.
+  res=$(git cat-file -t ${commit_sha} 2> /dev/null)
+  if [ "${res}" != "commit" ]; then
+    echo "fatal: Not a valid commit name ${commit_sha}"
+    exit 4
+  fi
+
+  # Make sure there aren't any local un-committed changes as this must
+  # change branches to be able to cherry-pick the specified commit into the
+  # branch.
+  git diff-index --quiet HEAD
   if [ $? -ne 0 ]; then
-    echo "fatal: interactive mode depends on the 'skim' fuzzy finder but it in't in the path'"
-    echo "If you haven't installed you can easily do so via: brew install sk"
-    exit 2
+    echo "fatal: Uncommitted changes are present."
+    echo "Please commit or stash any uncommitted changes before running this command."
+    exit 5
   fi
 
-  selected_log_entry=$(git log --pretty='format:%C(auto)%h %s' ${remote_base}..${base_branch} | sk)
-  if [ "${selected_log_entry}" = "" ]; then
-    echo "fatal: You neglected to select a commit to request review for."
-    echo "We can't request a review if you don't tell us what you want reviewed silly."
-    exit 3
+  # Get currently checked out branch name
+  original_branch_name=$(git rev-parse --abbrev-ref HEAD)
+
+  # Creates the non-tracking branch named ${branch_name} based on
+  # ${remote_branch} when branch doesn't already exist. When the branch does
+  # already exist simply reset the branch to start at ${remote_base}, effectively
+  # dropping any commits it previously had if any.
+  git branch -f -q --no-track ${branch_name} ${remote_base}
+  if [ $? -ne 0 ]; then
+    echo "fatal: Failed to create/reset branch ${branch_name}. No worries you are still in a decent state."
+    exit 6
   fi
 
-  commit_sha=$(echo ${selected_log_entry} | awk -F' ' '{print $1}')
-  branch_name=$2
+  # checkout the branch
+  git checkout -q ${branch_name}
+  if [ $? -ne 0 ]; then
+    echo "fatal: Failed to checkout ${branch_name}."
+    exit 7
+  fi
+
+  # cherry pick the commit
+  git cherry-pick ${commit_sha}
+  if [ $? -ne 0 ]; then
+    echo "warn: Failed to cherry-pick ${commit_sha} into ${branch_name}. This is likely due to a conflict."
+    echo "You should probably complete the cherry-pick, and then do the following:"
+    echo "  - push updated branch up to remote using - git push -f ${remote} ${brach_name}:${branch_name}"
+    echo "  - checkout the branch you were on originally using - git checkout ${original_branch_name}"
+    exit 8
+  fi
+
+  # force push up to the remote
+  git push -f -q ${remote} ${branch_name}:${branch_name}
+  if [ $? -ne 0 ]; then
+    echo "warn: Failed to push ${branch_name} up to ${remote}"
+    echo "You should figure out why the push failed and correct the issue and push the branch up to the remote."
+    exit 9
+  fi
+
+  # check out the original branch we were on
+  git checkout -q ${original_branch_name}
+  if [ $? -ne 0 ]; then
+    echo "warn: Failed to checkout ${original_branch_name}"
+    echo "You should probably figure out why the this failure occured, as it is unexpected."
+    echo "This command has nothing left to do, so don't stress too much."
+    exit 10
+  fi
+}
+
+validate_min_num_args_met() {
+  echo $#
+  if [ "$#" -lt 1 ]; then
+    echo "error: wrong number of arguments"
+    echo ""
+    print_ps_usage
+    exit 1
+  fi
+}
+
+parse_subcommand() {
+  rv=$1
+  shift
+  echo "${rv}"
+}
+
+validate_min_num_args_met $@
+subcommand=$( parse_subcommand $@ )
+
+if [ "$subcommand" = "ls" ]; then
+  list_patch_stack
+elif [ "$subcommand" = "rr" ]; then
+  request_review $@
 else
-  branch_name=$1
-  commit_sha=$2
-fi
-
-# TODO: add a default for the sha1 where maybe it defaults to the most recent
-# commit on master
-
-## Input Validations
-
-# Make sure that a commit with the provided sha exists.
-res=$(git cat-file -t ${commit_sha} 2> /dev/null)
-if [ "${res}" != "commit" ]; then
-  echo "fatal: Not a valid commit name ${commit_sha}"
-  exit 4
-fi
-
-# Make sure there aren't any local un-committed changes as this must
-# change branches to be able to cherry-pick the specified commit into the
-# branch.
-git diff-index --quiet HEAD
-if [ $? -ne 0 ]; then
-  echo "fatal: Uncommitted changes are present."
-  echo "Please commit or stash any uncommitted changes before running this command."
-  exit 5
-fi
-
-# Get currently checked out branch name
-original_branch_name=$(git rev-parse --abbrev-ref HEAD)
-
-# if [ `git branch --list $branch_name` ]; then
-#   # Reset the branch to point to the remote base, ignoring any commits that were
-#   # in it previously
-# else
-#   # create the branch based on origin/master
-# fi
-
-# Creates the non-tracking branch named ${branch_name} based on
-# ${remote_branch} when branch doesn't already exist. When the branch does
-# already exist simply reset the branch to start at ${remote_base}, effectively
-# dropping any commits it previously had if any.
-git branch -f -q --no-track ${branch_name} ${remote_base}
-if [ $? -ne 0 ]; then
-  echo "fatal: Failed to create/reset branch ${branch_name}. No worries you are still in a decent state."
-  exit 6
-fi
-
-# checkout the branch
-git checkout -q ${branch_name}
-if [ $? -ne 0 ]; then
-  echo "fatal: Failed to checkout ${branch_name}."
-  exit 7
-fi
-
-# cherry pick the commit
-git cherry-pick ${commit_sha}
-if [ $? -ne 0 ]; then
-  echo "warn: Failed to cherry-pick ${commit_sha} into ${branch_name}. This is likely due to a conflict."
-  echo "You should probably complete the cherry-pick, and then do the following:"
-  echo "  - push updated branch up to remote using - git push -f ${remote} ${brach_name}:${branch_name}"
-  echo "  - checkout the branch you were on originally using - git checkout ${original_branch_name}"
-  exit 8
-fi
-
-# force push up to the remote
-git push -f -q ${remote} ${branch_name}:${branch_name}
-if [ $? -ne 0 ]; then
-  echo "warn: Failed to push ${branch_name} up to ${remote}"
-  echo "You should figure out why the push failed and correct the issue and push the branch up to the remote."
-  exit 9
-fi
-
-# check out the original branch we were on
-git checkout -q ${original_branch_name}
-if [ $? -ne 0 ]; then
-  echo "warn: Failed to checkout ${original_branch_name}"
-  echo "You should probably figure out why the this failure occured, as it is unexpected."
-  echo "This command has nothing left to do, so don't stress too much."
-  exit 10
+  echo "error: ${subcommand} is an invalid subcommand"
+  echo ""
+  print_ps_usage
 fi
 
 exit 0

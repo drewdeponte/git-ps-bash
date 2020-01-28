@@ -1,4 +1,15 @@
-# git-rr
+# git-ps - Git patch stack
+
+Git patch stack is an add-on command for Git that facilitates using a patch-stack [Git][] workflow.
+
+It consists of the following commands:
+
+- `git-ps ls` - list current state of your stack of patches
+- `git-ps rebase` - interactively rebase your stack of patches to rearrange, squash, etc.
+- `git-ps rr -i <branch_name>` or `git-ps rr <branch_name> <commit_sha>` - request review of a patch
+- `git-ps push -i <branch_name>` or `git-ps push <branch_name> <commit_sha>` - push a commit into mainline
+
+# Content below needs reworking
 
 `git-rr`, short for git request review, is a custom [Git][] command intended to be used as part of a patch-stack [Git][] workflow to aid in requesting review of a particular patches.
 

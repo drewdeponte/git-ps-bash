@@ -1,6 +1,6 @@
 # git-ps - Git patch stack
 
-Git patch stack is an add-on command for Git that facilitates using a patch-stack [Git][] workflow.
+Git patch stack is an add-on command for Git that facilitates using a patch-stack [Git][] workflow while still using pull requests for peer review. It accomplishes this by managing your stack of patches and behind the scenes creating branches for patches you request review on and pushing them up to origin.
 
 It consists of the following commands:
 
@@ -9,6 +9,8 @@ It consists of the following commands:
 - `git-ps rebase` - interactively rebase your stack of patches onto origin/master to rearrange, squash, edit, etc.
 - `git-ps rr -i <branch_name>` or `git-ps rr <branch_name> <commit_sha>` - request review of a patch
 - `git-ps push -i <branch_name>` or `git-ps push <branch_name> <commit_sha>` - push a commit into mainline
+
+*Note:* Right now it has hard coded assumption that you are going to be working against an upstream remote named `origin` and that your upstream mainline branch is `origin/master` and that your local working branch is `master`.
 
 # Content below needs reworking
 

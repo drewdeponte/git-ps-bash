@@ -68,6 +68,7 @@ validate_no_uncommited_changes() {
   if [ $? -ne 0 ]; then
     echo "fatal: Uncommitted changes are present."
     echo "Please commit or stash any uncommitted changes before running this command."
+    git diff-index HEAD
     exit 5
   fi
 }

@@ -180,7 +180,7 @@ request_review() {
     echo "Please consider whether the patch should actually be dependent or if it should rather be altered such that it is independent and can be reviewed independently."
 
     cherry_pick_abort
-    checkout_branch_with_name ${base_branch}
+    checkout_branch_with_name ${original_branch_name}
   fi
   
   push_branch_up ${branch_name}
@@ -248,12 +248,12 @@ push() {
     echo "Please consider whether the patch should actually be dependent or if it should rather be altered such that it is independent and can be reviewed independently and pushed independently."
 
     cherry_pick_abort
-    checkout_branch_with_name ${base_branch}
+    checkout_branch_with_name ${original_branch_name}
   fi
 
   push_branch_to_mainline ${branch_name}
 
-  checkout_branch_with_name ${base_branch}
+  checkout_branch_with_name ${original_branch_name}
 
   # delete the local temp branch
 }

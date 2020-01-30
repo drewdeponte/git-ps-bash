@@ -187,8 +187,12 @@ request_review() {
   checkout_branch_with_name ${original_branch_name}
 }
 
-rebase() {
+rebase_interactive() {
   git rebase -i --onto ${remote_base} ${remote_base} ${base_branch}
+}
+
+rebase() {
+  git rebase --onto ${remote_base} ${remote_base} ${base_branch}
 }
 
 push_branch_to_mainline() {
@@ -281,7 +285,7 @@ if [ "$subcommand" = "ls" ]; then
 elif [ "$subcommand" = "rr" ]; then
   request_review $@
 elif [ "$subcommand" = "rebase" ]; then
-  rebase $@
+  rebase_interactive $@
 elif [ "$subcommand" = "push" ]; then
   push $@
 elif [ "$subcommand" = "pull" ]; then

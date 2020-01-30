@@ -167,11 +167,13 @@ request_review() {
 
   original_branch_name=$( get_checked_out_branch )
 
+  fetch_upstream
+
   create_branch_on_remote_base_with_name ${branch_name}
   checkout_branch_with_name ${branch_name}
   cherry_pick_res=$(cherry_pick ${commit_sha})
   if [ "${cherry_pick_res}" = "failed" ]; then
-    echo "Looks like you are trying to request review of (${commit_sha}), a patch that is dependent on another patch that is NOT currently in ${remote_base}. Dependent patches MUST be in ${remote_base} before requesting review for patches that depend on them."
+    echo "Looks like you are trying to request review of (${commit_sha}), a patch that conflicts with ${remote_base}. It could be that it is dependent on another patch that is NOT currently in ${remote_base} or just be conflicting with recent changes to ${remote_base}.  Dependent patches MUST be in ${remote_base} before requesting review of patches that depend on them." 
     echo ""
 
     list_patch_stack_up_to ${commit_sha}
@@ -204,8 +206,6 @@ push_branch_to_mainline() {
 }
 
 push() {
-  fetch_upstream
-
   # Make sure right number of arguments were passed to the command and validate
   # the values of those arguments as best as we can.
   if [ "$#" -ne 2 ]; then
@@ -238,11 +238,13 @@ push() {
 
   original_branch_name=$( get_checked_out_branch )
 
+  fetch_upstream
+
   create_branch_on_remote_base_with_name ${branch_name}
   checkout_branch_with_name ${branch_name}
   cherry_pick_res=$(cherry_pick ${commit_sha})
   if [ "${cherry_pick_res}" = "failed" ]; then
-    echo "Looks like you are trying to push (${commit_sha}), a patch that is dependent on another patch that is NOT currently in ${remote_base}.  Dependent patches MUST be in ${remote_base} before pushing patches that depend on them." 
+    echo "Looks like you are trying to push (${commit_sha}), a patch that conflicts with ${remote_base}. It could be that it is dependent on another patch that is NOT currently in ${remote_base} or just be conflicting with recent changes to ${remote_base}.  Dependent patches MUST be in ${remote_base} before pushing patches that depend on them." 
     echo ""
     echo "The dependent patch is one or more of the following:"
 

@@ -257,6 +257,8 @@ push() {
     checkout_branch_with_name ${original_branch_name}
   fi
 
+  push_branch_up ${branch_name}
+
   push_branch_to_mainline ${branch_name}
 
   checkout_branch_with_name ${original_branch_name}

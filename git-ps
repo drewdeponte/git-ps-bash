@@ -253,6 +253,8 @@ push() {
 
   push_branch_to_mainline ${branch_name}
 
+  checkout_branch_with_name ${base_branch}
+
   # delete the local temp branch
 }
 

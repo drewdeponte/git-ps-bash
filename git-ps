@@ -205,6 +205,22 @@ push_branch_to_mainline() {
   fi
 }
 
+delete_local_branch() {
+  git branch -d $1
+  if [ $? -ne 0 ]; then
+    echo "fatal: failed to delete local branch named, $1"
+    exit 31
+  fi
+}
+
+delete_remote_branch() {
+  git push ${remote} :$1
+  if [ $? -ne 0 ]; then
+    echo "fatal: failed to delete remote branch named, $1"
+    exit 32
+  fi
+}
+
 push() {
   # Make sure right number of arguments were passed to the command and validate
   # the values of those arguments as best as we can.
@@ -263,7 +279,9 @@ push() {
 
   checkout_branch_with_name ${original_branch_name}
 
-  # delete the local temp branch
+  delete_remote_branch ${branch_name}
+
+  delete_local_branch ${branch_neme}
 }
 
 pull() {

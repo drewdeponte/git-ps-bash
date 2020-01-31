@@ -281,7 +281,7 @@ push() {
 
   delete_remote_branch ${branch_name}
 
-  delete_local_branch ${branch_neme}
+  delete_local_branch ${branch_name}
 }
 
 pull() {

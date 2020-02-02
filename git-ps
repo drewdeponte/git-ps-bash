@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# Configuration Constants
 remote="origin"
 base_branch="master"
+
+# Read config for overrides of `remote` & `base_branch`
+source ./.git-ps-config > /dev/null 2>&1
+
+# Configuration Constants
 remote_base="${remote}/${base_branch}"
 
 print_ps_usage() {
@@ -289,6 +293,35 @@ pull() {
   rebase
 }
 
+show() {
+  if [ "$#" -ne 1 ]; then
+    echo "Wrong number of arguments"
+    print_ps_rr_usage
+    exit 1
+  fi
+
+  # Options Parsing
+
+  if [ "$1" = "-i" ] || [ "$1" = "--interactive" ]; then
+    interactive=1
+  else
+    interactive=0
+  fi
+
+  if [ $interactive -eq 1 ]; then
+    validate_skim_is_available
+
+    selected_log_entry=$( select_commit_with_skim )
+    commit_sha=$( parse_sha_from_log_entry $selected_log_entry )
+  else
+    commit_sha=$1
+  fi
+
+  validate_sha_exists $commit_sha
+
+  git show --pretty=raw $commit_sha
+}
+
 validate_min_num_args_met() {
   if [ "$#" -lt 1 ]; then
     echo "error: wrong number of arguments"
@@ -312,6 +345,8 @@ elif [ "$subcommand" = "push" ]; then
   push $@
 elif [ "$subcommand" = "pull" ]; then
   pull $@
+elif [ "$subcommand" = "show" ]; then
+  show $@
 else
   echo "error: ${subcommand} is an invalid subcommand"
   echo ""

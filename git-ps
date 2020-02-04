@@ -187,6 +187,7 @@ request_review() {
 
     cherry_pick_abort
     checkout_branch_with_name ${original_branch_name}
+    exit 40
   fi
   
   push_branch_up ${branch_name}
@@ -275,6 +276,7 @@ push() {
 
     cherry_pick_abort
     checkout_branch_with_name ${original_branch_name}
+    exit 40
   fi
 
   push_branch_up ${branch_name}

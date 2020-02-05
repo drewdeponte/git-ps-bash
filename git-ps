@@ -28,7 +28,7 @@ print_ps_rr_usage() {
 }
 
 fetch_upstream() {
-  git fetch --quiet origin master
+  git fetch --quiet ${remote} ${base_branch}
   if [ $? -ne 0 ]; then
     echo "fatal: Failed to fetch latest state from ${remote} ${base_branch}"
     exit 20

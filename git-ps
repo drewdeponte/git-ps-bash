@@ -11,7 +11,7 @@ remote_base="${remote}/${base_branch}"
 
 print_ps_usage() {
   echo "Usage: git-ps <subcommand>"
-  echo "valid subcommands: ls, rebase, rr, push"
+  echo "valid subcommands: ls, rebase, rr, pub"
 }
 
 list_patch_stack() {
@@ -343,7 +343,7 @@ elif [ "$subcommand" = "rr" ]; then
   request_review $@
 elif [ "$subcommand" = "rebase" ]; then
   rebase_interactive $@
-elif [ "$subcommand" = "push" ]; then
+elif [ "$subcommand" = "pub" ]; then
   push $@
 elif [ "$subcommand" = "pull" ]; then
   pull $@

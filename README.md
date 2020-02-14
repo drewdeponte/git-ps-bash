@@ -1,4 +1,4 @@
-# git-ps - Git patch stack
+# git-ps - Git Patch Stack
 
 Git patch stack is an add-on command for Git that facilitates using a patch-stack [Git][] workflow while still using pull requests for peer review. It accomplishes this by managing your stack of patches and behind the scenes creating branches for patches you request review on and pushing them up to origin.
 
